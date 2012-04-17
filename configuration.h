@@ -69,6 +69,7 @@ typedef struct stud_config_s {
     int TCP_KEEPALIVE_TIME;
     int DAEMONIZE;
     int PREFER_SERVER_CIPHERS;
+    int MAXFDS;
 } stud_config;
 
 char * config_error_get (void);
