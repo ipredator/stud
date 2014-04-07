@@ -36,6 +36,7 @@
 #define CFG_TACK_PIN_ACTIVATION "tack-pin-activation"
 #endif /* ENABLE_TACK */
 #define CFG_PREFER_SERVER_CIPHERS "prefer-server-ciphers"
+#define CFG_PEER_CRT_VRFY_DPTH "peer-cert-verify"
 #define CFG_BACKEND "backend"
 #define CFG_FRONTEND "frontend"
 #define CFG_WORKERS "workers"
@@ -162,6 +163,7 @@ stud_config * config_new (void) {
   r->TCP_KEEPALIVE_TIME = 3600;
   r->DAEMONIZE          = 0;
   r->PREFER_SERVER_CIPHERS = 0;
+  r->PEER_CRT_VRFY_DPTH = 0;
   r->MAXFDS             = -1;
 
   return r;
@@ -598,6 +600,9 @@ void config_param_validate (char *k, char *v, stud_config *cfg, char *file, int 
   else if (strcmp(k, CFG_TACK_PIN_ACTIVATION) == 0) {
     r = config_param_val_bool(v, &cfg->TACK_PIN_ACTIVATION);
   }
+  else if (strcmp(k, CFG_PEER_CRT_VRFY_DPTH) == 0) {
+    r = config_param_val_int(v, &cfg->PEER_CRT_VRFY_DPTH);
+  }
 #endif /* ENABLE_TACK */
   else if (strcmp(k, CFG_SSL_ENGINE) == 0) {
     if (v != NULL && strlen(v) > 0) {
@@ -924,6 +929,8 @@ void config_print_usage_fd (char *prog, stud_config *cfg, FILE *out) {
   fprintf(out, "  -c  --ciphers=SUITE         Sets allowed ciphers (Default: \"%s\")\n", config_disp_str(cfg->CIPHER_SUITE));
   fprintf(out, "  -e  --ssl-engine=NAME       Sets OpenSSL engine (Default: \"%s\")\n", config_disp_str(cfg->ENGINE));
   fprintf(out, "  -O  --prefer-server-ciphers Prefer server list order\n");
+  fprintf(out, "  -p  --peer-cert-verify=DEPTH\n");
+  fprintf(out, "                              Require & verify peer certificates (Default: \"%d\")\n", cfg->PEER_CRT_VRFY_DPTH);
 #ifdef ENABLE_TACK
   fprintf(out, "  -T  --tack-file=FILE        Load TACK data from specified file.\n");
   fprintf(out, "  -S  --tack-break-sigs-file=FILE Load TACK break sigs from specified file.\n");
@@ -1043,6 +1050,12 @@ void config_print_default (FILE *fd, stud_config *cfg) {
   fprintf(fd, "#\n");
   fprintf(fd, "# type: boolean\n");
   fprintf(fd, FMT_STR, CFG_PREFER_SERVER_CIPHERS, config_disp_bool(cfg->PREFER_SERVER_CIPHERS));
+  fprintf(fd, "\n");
+
+  fprintf(fd, "# Require peer to send a valid certificate and verify to this depth\n");
+  fprintf(fd, "#\n");
+  fprintf(fd, "# type: integer\n");
+  fprintf(fd, FMT_ISTR, CFG_PEER_CRT_VRFY_DPTH, cfg->PEER_CRT_VRFY_DPTH);
   fprintf(fd, "\n");
 
   fprintf(fd, "# Use specified SSL engine\n");
@@ -1211,6 +1224,7 @@ void config_parse_cli(int argc, char **argv, stud_config *cfg) {
     { "client", 0, &client, 1},
     { CFG_CIPHERS, 1, NULL, 'c' },
     { CFG_PREFER_SERVER_CIPHERS, 0, NULL, 'O' },
+    { CFG_PEER_CRT_VRFY_DPTH, 1, NULL, 'p' },
 #ifdef ENABLE_TACK
     { CFG_TACK_FILE, 1, NULL, 'T'},
     { CFG_TACK_BREAK_SIGS_FILE, 1, NULL, 'S'},
@@ -1249,7 +1263,7 @@ void config_parse_cli(int argc, char **argv, stud_config *cfg) {
     int option_index = 0;
     c = getopt_long(
       argc, argv,
-      "c:e:Ob:f:n:B:C:T:S:pU:P:M:k:r:u:g:qstVh",
+      "c:e:Op:b:f:n:B:C:T:S:pU:P:M:k:r:u:g:qstVh",
       long_options, &option_index
     );
 
@@ -1294,6 +1308,9 @@ void config_parse_cli(int argc, char **argv, stud_config *cfg) {
          break;
       case 'O':
         config_param_validate(CFG_PREFER_SERVER_CIPHERS, CFG_BOOL_ON, cfg, NULL, 0);
+        break;
+      case 'p':
+        config_param_validate(CFG_PEER_CRT_VRFY_DPTH, optarg, cfg, NULL, 0);
         break;
       case 'b':
         config_param_validate(CFG_BACKEND, optarg, cfg, NULL, 0);

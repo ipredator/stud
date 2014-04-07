@@ -74,7 +74,9 @@ typedef struct stud_config_s {
     int TCP_KEEPALIVE_TIME;
     int DAEMONIZE;
     int PREFER_SERVER_CIPHERS;
+    int PEER_CRT_VRFY_DPTH;
     int MAXFDS;
+    char *CERT_FILE;
 } stud_config;
 
 char * config_error_get (void);
