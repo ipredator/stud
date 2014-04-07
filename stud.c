@@ -657,8 +657,13 @@ SSL_CTX *make_ctx(const char *pemfile) {
 		SSL_CTX_use_tack_files(ctx, CONFIG->TACK_FILE, CONFIG->TACK_BREAK_SIGS_FILE, CONFIG->TACK_PIN_ACTIVATION);	
 #endif
 
+    if (CONFIG->PMODE == SSL_CLIENT) {
+        /* Disable internal cache of openssl: session reuse cause memory leak
+           in SSL_SESS_CACHE_CLIENT mode */
+        SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
+    }
 #ifdef USE_SHARED_CACHE
-    if (CONFIG->SHARED_CACHE) {
+    else if (CONFIG->SHARED_CACHE) {
         if (shared_context_init(ctx, CONFIG->SHARED_CACHE) < 0) {
             ERR("Unable to alloc memory for shared cache.\n");
             exit(1);
